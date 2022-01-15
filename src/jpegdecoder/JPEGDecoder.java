@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -16,33 +18,45 @@ import java.util.logging.Logger;
  */
 public class JPEGDecoder {
 
+    public String mode = "";
     int bitPointer = -1;    // not started yet
     byte curByte = 0;
-    private int idctFunc;
-
     BufferedImage image;
+
+    List<JpegSegment> segments = new ArrayList<>();
 
     String chromaSubsampling = "";
 
     int restartInterval = 0;
 
-    ArrayList<ColorComponent> colorComponents = new ArrayList<>();
-    //ArrayList<short[][]> qTables = new ArrayList<>();
-    ArrayList<QuantizationTable> qTables = new ArrayList<>();
-    HashMap<Byte, HuffmanTable> huffmanTablesDC = new HashMap<>(),
-            huffmanTablesAC = new HashMap<>();
+    List<ColorComponent> colorComponents = new ArrayList<>();
+    List<QuantizationTable> qTables = new ArrayList<>();
+    Map<Byte, HuffmanTable> huffmanTablesDC = new HashMap<>();
+    Map<Byte, HuffmanTable> huffmanTablesAC = new HashMap<>();
 
-    int[][] M_int = new int[8][8],
-            MT_int = new int[8][8];
+    int[][] M_int = new int[8][8];
+    int[][] MT_int = new int[8][8];
 
-    int img_width, img_height;
+    int img_width;
+    int img_height;
 
     MCU[][] MCUs;
 
     boolean unableToDecode = false;
-    public String mode = "";
-
     int mcuCount;
+    int[] lastDC;
+    float[][] M = new float[8][8],
+            MT = new float[8][8];
+    float cos1 = (float) (Math.sqrt(2) * Math.cos(1.0 * Math.PI / 16)),
+            cos2 = (float) (Math.sqrt(2) * Math.cos(2.0 * Math.PI / 16)),
+            cos3 = (float) (Math.sqrt(2) * Math.cos(3.0 * Math.PI / 16)),
+            cos4 = (float) (Math.sqrt(2) * Math.cos(4.0 * Math.PI / 16)),
+            cos5 = (float) (Math.sqrt(2) * Math.cos(5.0 * Math.PI / 16)),
+            cos6 = (float) (Math.sqrt(2) * Math.cos(6.0 * Math.PI / 16)),
+            cos7 = (float) (Math.sqrt(2) * Math.cos(7.0 * Math.PI / 16)),
+            sqrt2_2 = (float) (1.0 / Math.sqrt(2.0));
+    StringBuilder logSB;
+    private int idctFunc;
 
     public JPEGDecoder() {
         buildMTables();
@@ -85,9 +99,11 @@ public class JPEGDecoder {
         logSB.append(jpegSegment.formattedOutput());
         logSB.append(jpegSegment.rawBytes());
         logSB.append("-----------------------------\n");
+        segments.add(jpegSegment);
 
         while (jpegSegment != null && !(jpegSegment instanceof EOISegment)) {
             jpegSegment = readSegment(br);
+            segments.add(jpegSegment);
 
             String str = jpegSegment.formattedOutput();
             logSB.append(str);
@@ -270,7 +286,7 @@ public class JPEGDecoder {
 
 //                if (nextByte == 0)   // 0xFF00 ==> 0xFF
 //                {
-//                }  
+//                }
             }
 
             bitPointer = 7;
@@ -292,19 +308,19 @@ public class JPEGDecoder {
         return bits;
     }
 
-    short Extend(short bits, byte size) {
+    short extend(short bits, byte size) {
         short v = (short) (1 << size - 1);     // for 5 bits, v = 10000
 
         // if it's negative, we find -max (where max is the largest positive
-        // number which can be made using "size" bits.) and we add it to "bits". 
+        // number which can be made using "size" bits.) and we add it to "bits".
         // for example, if size = 5, the largest positive 5 bits number is
-        // max = (11111)2 = 31. 
-        // -max is calculated by left shifting -1, size times, and adding 1. 
+        // max = (11111)2 = 31.
+        // -max is calculated by left shifting -1, size times, and adding 1.
         if (bits < v)   // "bits" manfie, chon bite akharesh 1 nist
         {
             return (short) ((-1 << size) + 1 + bits);   // difference = -max + bits
         } else {
-            return (short) bits;    // difference = bits
+            return bits;    // difference = bits
         }
     }
 
@@ -324,11 +340,6 @@ public class JPEGDecoder {
         return sym.getData();
 
     }
-
-    int[] lastDC;
-
-    float[][] M = new float[8][8],
-            MT = new float[8][8];
 
     private void buildMTables() {
         for (int i = 0; i < 8; i++) {
@@ -384,15 +395,6 @@ public class JPEGDecoder {
             }
         }
     }
-
-    float cos1 = (float) (Math.sqrt(2) * Math.cos(1.0 * Math.PI / 16)),
-            cos2 = (float) (Math.sqrt(2) * Math.cos(2.0 * Math.PI / 16)),
-            cos3 = (float) (Math.sqrt(2) * Math.cos(3.0 * Math.PI / 16)),
-            cos4 = (float) (Math.sqrt(2) * Math.cos(4.0 * Math.PI / 16)),
-            cos5 = (float) (Math.sqrt(2) * Math.cos(5.0 * Math.PI / 16)),
-            cos6 = (float) (Math.sqrt(2) * Math.cos(6.0 * Math.PI / 16)),
-            cos7 = (float) (Math.sqrt(2) * Math.cos(7.0 * Math.PI / 16)),
-            sqrt2_2 = (float) (1.0 / Math.sqrt(2.0));
 
     int[][] invDCT2(int[][] input) {
         int[][] output = new int[8][8];
@@ -557,7 +559,7 @@ public class JPEGDecoder {
         resetDecoder();
 
         int MCU_width = colorComponents.get(0).getHorzFreq() * 8;    // HFreq_Y * 8 pixels (e.g. 2 * 8 pixel)
-        int MCU_height = colorComponents.get(0).getVertfreq() * 8;   // VFreq_Y * 8 pixels
+        int MCU_height = colorComponents.get(0).getVertFreq() * 8;   // VFreq_Y * 8 pixels
 
         int n_hMCUs = (int) Math.ceil((img_width + 0.0) / MCU_width);
         int n_vMCUs = (int) Math.ceil((img_height + 0.0) / MCU_height);
@@ -571,93 +573,102 @@ public class JPEGDecoder {
                 MCUs[mcux][mcuy] = new MCU();
 
                 for (int nComp = 0; nComp < colorComponents.size(); nComp++) {
-                    for (int vDataUnit = 0; vDataUnit < colorComponents.get(nComp).getVertfreq(); vDataUnit++) {
+                    for (int vDataUnit = 0; vDataUnit < colorComponents.get(nComp).getVertFreq(); vDataUnit++) {
                         for (int hDataUnit = 0; hDataUnit < colorComponents.get(nComp).getHorzFreq(); hDataUnit++) {
-                            // DC:
-                            int differenceDC = 0;
-                            short bits = 0;
-
-                            byte magnitude = decodeNextSymbol(br,
-                                    huffmanTablesDC.get(colorComponents.get(nComp).getDctableindex()));
-                            bits = readBits(br, magnitude);
-                            differenceDC = Extend(bits, magnitude);
-                            lastDC[nComp] = lastDC[nComp] + differenceDC;
-
-                            short[] coefs = new short[64];
-
-                            coefs[0] = (short) lastDC[nComp];
-
-                            int i = 1;
-                            while (i < 64) {
-                                byte value = decodeNextSymbol(br,
-                                        huffmanTablesAC.get(colorComponents.get(nComp).getActableindex()));
-
-                                byte lowBits = (byte) (0x0F & value);
-                                byte n = (byte) (0xF0 & value);
-                                byte highBits = (byte) ((0xF0 & value) >>> 4);
-
-                                if (lowBits != 0) {
-                                    i += highBits;  // number of 0 coefficients before real bytes
-
-                                    bits = readBits(br, lowBits);
-                                    if (i < 64)   // ????
-                                    {
-                                        coefs[i] = Extend(bits, lowBits);
-                                    }
-
-                                    i++;
-                                } else    // F0 ya 00
-                                {
-                                    if (highBits == 0xF) {
-                                        i += 16;
-                                    } else if (highBits == 0) // EOB
-                                    {
-                                        break;
-                                    }
-                                }
-                            }
-
-                            short[][] coefsZigZag = ZigZagTable.convertToZigZagTable(coefs);
-
-                            int[][] deqTable = dequantize(coefsZigZag,
-                                    colorComponents.get(nComp).getqTableIndex());
-
-                            int[][] idctTable = null;
-                            switch (idctFunc) {
-                                case 0:
-                                    idctTable = invDCT2(deqTable);
-                                    break;
-                                case 1:
-                                    idctTable = IDCT2_M(deqTable);
-                                    break;
-
-                            }
-
-                            MCUs[mcux][mcuy].getComponents().add(idctTable);
-
+                            decodeMCU(br, MCUs[mcux][mcuy], nComp);
                         }
                     }
                 }
 
                 if (restartInterval != 0 && ++mcuCount % restartInterval == 0) {
-                    if (mcuCount < n_hMCUs * n_vMCUs)   // any more MCUs? (if not, it's not RST)
-                    {
+                    if (mcuCount < n_hMCUs * n_vMCUs) {  // any more MCUs? (if not, it's not RST)
                         resetDCDifference(br);
                     }
                 }
 
-                Color[][] rgbTable = upSampleAndConvertToRGB(MCUs[mcux][mcuy]);
+                drawMCU(MCU_width, MCU_height, mcuy, mcux);
+            }
+        }
+    }
 
-                for (int i = 0; i < MCU_width; i++) {
-                    for (int j = 0; j < MCU_height; j++) {
-                        int X = mcux * MCU_width + i,
-                                Y = mcuy * MCU_height + j;
+    private void decodeMCU(RandomAccessFile br, MCU mcUs, int nComp) throws Exception {
+        short[] coefs = new short[64];
 
-                        if (X < img_width && Y < img_height) {
-                            int col = toIntARGB(rgbTable[j][i]);
-                            image.setRGB(X, Y, col);
-                        }
-                    }
+        findDCCoefficient(br, nComp, coefs);
+        findACCoefficients(br, nComp, coefs);
+
+        short[][] coefsZigZag = ZigZagTable.convertToZigZagTable(coefs);
+
+        int[][] deqTable = dequantize(coefsZigZag,
+                colorComponents.get(nComp).getqTableIndex());
+
+        int[][] idctTable = null;
+        switch (idctFunc) {
+            case 0:
+                idctTable = invDCT2(deqTable);
+                break;
+            case 1:
+                idctTable = IDCT2_M(deqTable);
+                break;
+        }
+
+        mcUs.getComponents().add(idctTable);
+    }
+
+    private void findACCoefficients(RandomAccessFile br, int nComp, short[] coefs) throws Exception {
+        int i = 1;
+        while (i < 64) {
+            byte value = decodeNextSymbol(br,
+                    huffmanTablesAC.get(colorComponents.get(nComp).getActableindex()));
+
+            byte lowBits = (byte) (0x0F & value);
+            byte n = (byte) (0xF0 & value);
+            byte highBits = (byte) ((0xF0 & value) >>> 4);
+
+            if (lowBits != 0) {
+                i += highBits;  // number of 0 coefficients before real bytes
+
+                short bits = readBits(br, lowBits);
+                if (i < 64) {  // TODO ????
+                    coefs[i] = extend(bits, lowBits);
+                }
+
+                i++;
+            } else {   // F0 or 00
+                if (highBits == 0xF) {
+                    i += 16;
+                } else if (highBits == 0) { // EOB
+
+                    break;
+                }
+            }
+        }
+    }
+
+    private void findDCCoefficient(RandomAccessFile br, int nComp, short[] coefs) throws Exception {
+        // DC:
+        int dcDifference = 0;
+        short bits = 0;
+
+        byte bitCount = decodeNextSymbol(br,
+                huffmanTablesDC.get(colorComponents.get(nComp).getDctableindex()));
+        bits = readBits(br, bitCount);
+        dcDifference = extend(bits, bitCount);
+        lastDC[nComp] = lastDC[nComp] + dcDifference;
+        coefs[0] = (short) lastDC[nComp];
+    }
+
+    private void drawMCU(int MCU_width, int MCU_height, int mcuy, int mcux) {
+        Color[][] rgbTable = upSampleAndConvertToRGB(MCUs[mcux][mcuy]);
+
+        for (int i = 0; i < MCU_width; i++) {
+            for (int j = 0; j < MCU_height; j++) {
+                int x = mcux * MCU_width + i;
+                int y = mcuy * MCU_height + j;
+
+                if (x < img_width && y < img_height) {
+                    int col = toIntARGB(rgbTable[j][i]);
+                    image.setRGB(x, y, col);
                 }
             }
         }
@@ -752,7 +763,7 @@ public class JPEGDecoder {
     public Image getMCUInfo(int X, int Y) {
         if (image != null) {
             int MCU_width = colorComponents.get(0).getHorzFreq() * 8;    // HFreq_Y * 8 pixels (e.g. 2 * 8 pixels)
-            int MCU_height = colorComponents.get(0).getVertfreq() * 8;   // VFreq_Y * 8 pixels
+            int MCU_height = colorComponents.get(0).getVertFreq() * 8;   // VFreq_Y * 8 pixels
 
             int mcux = X / MCU_width;
             int mcuy = Y / MCU_height;
@@ -809,8 +820,6 @@ public class JPEGDecoder {
 
         return null;
     }
-
-    StringBuilder logSB;
 
     public String getLastLog() {
         if (logSB != null) {

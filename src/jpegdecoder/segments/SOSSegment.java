@@ -4,7 +4,7 @@ import jpegdecoder.ColorComponent;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -18,7 +18,7 @@ public class SOSSegment extends JpegSegment
     private byte[] DCHuff;
     private byte[] ACHuff;
 
-    public SOSSegment(RandomAccessFile raf, byte markerSecondByte, ArrayList<ColorComponent> colorComponents) throws IOException
+    public SOSSegment(RandomAccessFile raf, byte markerSecondByte, List<ColorComponent> colorComponents) throws IOException
     {
         super(raf, markerSecondByte);
         setCompCount(getBr().readByte());

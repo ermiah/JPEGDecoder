@@ -46,7 +46,7 @@ public class SOF0Segment extends JpegSegment {
 
             ColorComponent cc = new ColorComponent(comp);
             cc.setHorzFreq(horzFreq);
-            cc.setVertfreq(vertFreq);
+            cc.setVertFreq(vertFreq);
             cc.setqTableIndex(qTable);
 
             getColorComponents().add(cc);
@@ -61,11 +61,11 @@ public class SOF0Segment extends JpegSegment {
             {
                 chromaSubsampling = "4:4:4";
             } else if (getColorComponents().get(0).getHorzFreq() == 2
-                    && getColorComponents().get(0).getVertfreq() == 1)  // Y Y    Cb ..     Cr ..
+                    && getColorComponents().get(0).getVertFreq() == 1)  // Y Y    Cb ..     Cr ..
             {
                 chromaSubsampling = "4:2:2";
             } else if (getColorComponents().get(0).getHorzFreq() == 2
-                    && getColorComponents().get(0).getVertfreq() == 2) {
+                    && getColorComponents().get(0).getVertFreq() == 2) {
                 ColorComponent cc = getColorComponents().get(1); //  Cb
                 if (cc.getHorzFreq() == 1) {                                   // Y Y  Y Y  Cb ..  Cb ..   Cr ..   Cr ..
                     chromaSubsampling = "4:2:0";    // Y Y  Y Y  .. ..  .. ..   .. ..   .. ..
@@ -98,13 +98,13 @@ public class SOF0Segment extends JpegSegment {
                 sb.append("\nChroma Subsampling: ").append(getChromaSubsampling()).
                         append("\nY      Cb        Cr\n\n");
             } else if (getColorComponents().get(0).getHorzFreq() == 2
-                    && getColorComponents().get(0).getVertfreq() == 1)  // Y Y    Cb ..     Cr ..
+                    && getColorComponents().get(0).getVertFreq() == 1)  // Y Y    Cb ..     Cr ..
             {
                 chromaSubsampling = "4:2:2";
                 sb.append("\nChroma Subsampling: ").append(getChromaSubsampling()).
                         append("\nY Y    Cb ..     Cr ..\n\n");
             } else if (getColorComponents().get(0).getHorzFreq() == 2
-                    && getColorComponents().get(0).getVertfreq() == 2) {
+                    && getColorComponents().get(0).getVertFreq() == 2) {
                 ColorComponent cc = getColorComponents().get(1); //  Cb
                 if (cc.getHorzFreq() == 1) {                                   // Y Y  Y Y  Cb ..  Cb ..   Cr ..   Cr ..
                     chromaSubsampling = "4:2:0";    // Y Y  Y Y  .. ..  .. ..   .. ..   .. ..

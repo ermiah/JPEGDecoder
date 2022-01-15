@@ -11,7 +11,7 @@ public class ColorComponent {
 
     private int horzFreq;
 
-    private int vertfreq;
+    private int vertFreq;
 
     private byte dctableindex;
 
@@ -56,12 +56,12 @@ public class ColorComponent {
         this.horzFreq = horzFreq;
     }
 
-    public int getVertfreq() {
-        return vertfreq;
+    public int getVertFreq() {
+        return vertFreq;
     }
 
-    public void setVertfreq(int vertfreq) {
-        this.vertfreq = vertfreq;
+    public void setVertFreq(int vertFreq) {
+        this.vertFreq = vertFreq;
     }
 
     public byte getDctableindex() {

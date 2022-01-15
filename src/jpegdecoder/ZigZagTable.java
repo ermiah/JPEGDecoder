@@ -22,13 +22,11 @@ public class ZigZagTable {
                 j--;
             }
 
-            if (i < 0)  // we've hit the left wall
-            {
+            if (i < 0) { // we've hit the left wall
                 i = 0;
                 topRight = false;
             }
-            if (i > rows - 1)   // the bottom wall
-            {
+            if (i > rows - 1) {  // the bottom wall
                 i = rows - 1;
                 topRight = true;
                 j += 2; // the bottom triangle

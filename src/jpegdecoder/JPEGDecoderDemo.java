@@ -113,7 +113,13 @@ public class JPEGDecoderDemo {
                     frame.repaint();
 
                     jpegInfo = jd.getLastLog();
-                    textPane.setText(jpegInfo);
+
+                    StringBuilder summary = new StringBuilder();
+                    jd.segments.forEach(s ->
+                            summary.append(s.getClass().getSimpleName() + "\n"));
+
+                    textPane.setText("Summary: \n" + summary + "*********************************\n Details: \n" +
+                            jpegInfo);
                 } catch (Exception ex) {
                     Logger.getLogger(JPEGDecoderDemo.class.getName()).log(Level.SEVERE, null, ex);
                     JOptionPane.showMessageDialog(frame, "Not a valid JPEG (or not supported by this decoder).\n\nMessage: " + ex.getMessage());
