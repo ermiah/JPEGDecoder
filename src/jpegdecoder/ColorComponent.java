@@ -6,43 +6,90 @@
 package jpegdecoder;
 
 /**
- *
  * @author Nosrati
  */
-class ColorComponent
-{
+public class ColorComponent {
 
-    public String Name;
+    private String name;
 
-    public int Index;
+    private int index;
 
-    public int HorzFreq;
+    private int horzFreq;
 
-    public int VertFreq;
+    private int vertfreq;
 
-    public byte DCTableIndex;
+    private byte dctableindex;
 
-    public byte ACTableIndex;
+    private byte actableindex;
 
-    public byte QTableIndex;
+    private byte qTableIndex;
 
 
-    public ColorComponent(int index)
-    {
-        Index = index;
+    public ColorComponent(int index) {
+        this.setIndex(index);
 
-        if (index == 1)
-        {
-            Name = "Y";
-        }
-        else if (index == 2)
-        {
-            Name = "Cb";
-        }
-        else if (index == 3)
-        {
-            Name = "Cr";
+        if (index == 1) {
+            setName("Y");
+        } else if (index == 2) {
+            setName("Cb");
+        } else if (index == 3) {
+            setName("Cr");
         }
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
+    }
+
+    public int getHorzFreq() {
+        return horzFreq;
+    }
+
+    public void setHorzFreq(int horzFreq) {
+        this.horzFreq = horzFreq;
+    }
+
+    public int getVertfreq() {
+        return vertfreq;
+    }
+
+    public void setVertfreq(int vertfreq) {
+        this.vertfreq = vertfreq;
+    }
+
+    public byte getDctableindex() {
+        return dctableindex;
+    }
+
+    public void setDctableindex(byte dctableindex) {
+        this.dctableindex = dctableindex;
+    }
+
+    public byte getActableindex() {
+        return actableindex;
+    }
+
+    public void setActableindex(byte actableindex) {
+        this.actableindex = actableindex;
+    }
+
+    public byte getqTableIndex() {
+        return qTableIndex;
+    }
+
+    public void setqTableIndex(byte qTableIndex) {
+        this.qTableIndex = qTableIndex;
+    }
 }

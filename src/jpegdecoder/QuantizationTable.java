@@ -7,20 +7,16 @@
 package jpegdecoder;
 
 /**
- *
  * @author Nosrati
  */
-public class QuantizationTable
-{
-    private short[][] qTable;
-    
-    public QuantizationTable(short[][] qt)
-    {
+public class QuantizationTable {
+    private final short[][] qTable;
+
+    public QuantizationTable(short[][] qt) {
         qTable = qt;
     }
 
-    public short[][] getArray()
-    {
+    public short[][] getArray() {
         return qTable;
     }
 }
