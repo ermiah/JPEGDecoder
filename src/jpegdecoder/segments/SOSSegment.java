@@ -18,6 +18,12 @@ public class SOSSegment extends JpegSegment
     private byte[] DCHuff;
     private byte[] ACHuff;
 
+
+
+    private byte spectralStart;
+    private byte spectralEnd;
+    private byte successiveApproximation;
+
     public SOSSegment(RandomAccessFile raf, byte markerSecondByte, List<ColorComponent> colorComponents) throws IOException
     {
         super(raf, markerSecondByte);
@@ -45,6 +51,10 @@ public class SOSSegment extends JpegSegment
                 }
             }
         }
+
+        this.spectralStart = getBr().readByte();
+        this.spectralEnd = getBr().readByte();
+        this.successiveApproximation = getBr().readByte();
     }
 
     @Override
@@ -52,7 +62,7 @@ public class SOSSegment extends JpegSegment
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("SOS").append("Length: ").append(getLen()).
+        sb.append("SOS\n\n").append("Length: ").append(getLen()).
                 append("\nComponent Count: ").append(getCompCount());
 
         for (int i = 0; i < getCompCount(); i++)
@@ -62,9 +72,9 @@ public class SOSSegment extends JpegSegment
                     append("\nAC Huffman Table: ").append(getACHuff()[i]).append('\n');
         }
 
-        sb.append("\nSpectral Selection Start: ").append(getBr().readByte()).
-                append("\nSpectral Selection End: ").append(getBr().readByte()).
-                append("\nSuccessive Approximation: ").append(getBr().readByte()).
+        sb.append("\nSpectral Selection Start: ").append(spectralStart).
+                append("\nSpectral Selection End: ").append(spectralEnd).
+                append("\nSuccessive Approximation: ").append(successiveApproximation).
                 append('\n');
         
         return sb.toString();
@@ -108,5 +118,17 @@ public class SOSSegment extends JpegSegment
 
     public void setACHuff(byte[] ACHuff) {
         this.ACHuff = ACHuff;
+    }
+
+    public byte getSpectralStart() {
+        return spectralStart;
+    }
+
+    public byte getSpectralEnd() {
+        return spectralEnd;
+    }
+
+    public byte getSuccessiveApproximation() {
+        return successiveApproximation;
     }
 }

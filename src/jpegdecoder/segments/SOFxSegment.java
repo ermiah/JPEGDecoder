@@ -1,46 +1,35 @@
 package jpegdecoder.segments;
 
-import jpegdecoder.segments.JpegSegment;
-
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
- *
  * @author Nosrati
  */
-public class SOFxSegment extends JpegSegment
-{
+public class SOFxSegment extends JpegSegment {
     private String mode;
-    
-    public SOFxSegment(RandomAccessFile raf, byte markerSecondByte) throws IOException
-    {
+
+    public SOFxSegment(RandomAccessFile raf, byte markerSecondByte) throws IOException {
         super(raf, markerSecondByte);
-        
-        if (getMarkerSB() == (byte)0xC1)
-        {
+
+        if (getMarkerSB() == (byte) 0xC1) {
             mode = "Sequential";
-        }
-        else if (getMarkerSB() == (byte)0xC2)
-        {
+        } else if (getMarkerSB() == (byte) 0xC2) {
             mode = "Progressive";
-        }
-        else if (getMarkerSB() == (byte)0xC3)
-        {
+        } else if (getMarkerSB() == (byte) 0xC3) {
             mode = "Lossless";
         }
     }
 
     @Override
-    public String formattedOutput() throws IOException
-    {
+    public String formattedOutput() throws IOException {
         StringBuilder sb = new StringBuilder();
-        
-        sb.append("SOF").append(getMarkerSB() & 0x0F);
+
+        sb.append("SOF").append(getMarkerSB() & 0x0F).append("\n\n");
         sb.append("Length: ").append(getLen());
 
-        sb.append("\n").append(getMode());
-        
+        sb.append("\n").append(getMode()).append("\n");
+
         return sb.toString();
     }
 

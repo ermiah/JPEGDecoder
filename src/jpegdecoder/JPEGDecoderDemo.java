@@ -104,7 +104,7 @@ public class JPEGDecoderDemo {
                         ii.setImage(jd.image);
                     } else {
                         lblImage.setIcon(null);
-                        if (!jd.mode.equals("") && !jd.mode.equals("baseline"))
+                        if (!jd.mode.equals("") && !jd.mode.equals("baseline") && !jd.mode.equals("Progressive"))
                             lblImage.setText("Not supported - " + jd.mode + " mode");
                         else
                             lblImage.setText("Error");

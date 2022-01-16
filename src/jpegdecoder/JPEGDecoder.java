@@ -26,6 +26,7 @@ public class JPEGDecoder {
     List<JpegSegment> segments = new ArrayList<>();
 
     String chromaSubsampling = "";
+    SOSSegment currentSos = null;
 
     int restartInterval = 0;
 
@@ -33,7 +34,6 @@ public class JPEGDecoder {
     List<QuantizationTable> qTables = new ArrayList<>();
     Map<Byte, HuffmanTable> huffmanTablesDC = new HashMap<>();
     Map<Byte, HuffmanTable> huffmanTablesAC = new HashMap<>();
-
 
 
     int img_width;
@@ -177,8 +177,20 @@ public class JPEGDecoder {
 
                 break;
 
-            case (byte) 0xC1:  // Sequential - Not Implemented
             case (byte) 0xC2:  // Progressive - Not Implemented
+                jpegSegment = new SOF0Segment(br, (byte) 0xC0);
+
+                colorComponents.addAll(((SOF0Segment) jpegSegment).getColorComponents());
+
+                img_width = ((SOF0Segment) jpegSegment).getImgWidth();
+                img_height = ((SOF0Segment) jpegSegment).getImgHeight();
+
+                chromaSubsampling = ((SOF0Segment) jpegSegment).getChromaSubsampling();
+                mode = "Progressive";
+
+//                unableToDecode = true;
+                break;
+            case (byte) 0xC1:  // Sequential - Not Implemented
             case (byte) 0xC3:  // Lossless - Not Implemented
                 jpegSegment = new SOFxSegment(br, marker[1]);
 
@@ -196,11 +208,22 @@ public class JPEGDecoder {
 
             case (byte) 0xDA:  // SOS
                 jpegSegment = new SOSSegment(br, marker[1], colorComponents);
+                currentSos = (SOSSegment) jpegSegment;
 
                 if (unableToDecode) {
                     dumpCompressedData(br);
                 } else {
-                    decodeMCUs(br);
+                    if (mode.equals("") || mode.equals("baseline")) {
+                        decodeMCUs(br);
+                    } else if (mode.equals("Progressive")) {
+                        if (currentSos.getSpectralStart() == 0 && currentSos.getSpectralEnd() == 0 &&
+                                (currentSos.getSuccessiveApproximation() & 0xF0) == 0) {
+                            // First DC Scan:
+                            decodeMCUs(br);
+                        } else {
+                            dumpCompressedData(br);
+                        }
+                    }
                 }
 
                 break;
@@ -216,7 +239,7 @@ public class JPEGDecoder {
     private void dumpCompressedData(RandomAccessFile br) throws IOException {
         boolean endOfSeg = false;
 
-        ArrayList<Byte> scan = new ArrayList<>();
+        var scan = new ArrayList<Byte>();
         scan.add((byte) 0xFF);
         scan.add((byte) 0xDA);
         byte b;
@@ -368,8 +391,14 @@ public class JPEGDecoder {
     private void decodeMCU(RandomAccessFile br, MCU mcUs, int nComp) throws Exception {
         short[] coefs = new short[64];
 
-        findDCCoefficient(br, nComp, coefs);
-        findACCoefficients(br, nComp, coefs);
+        if (mode.equals("") || mode.equals("baseline")) {
+            findDCCoefficient(br, nComp, coefs);
+            findACCoefficients(br, nComp, coefs);
+        }
+        if (mode.equals("Progressive")) {
+            findDCCoefficient(br, nComp, coefs);
+            for (int i = 1; i < 64; i++) coefs[i] = 0;
+        }
 
         // If we wanted to see how our image would look like if there were no AC coefficents:
         // for (int i = 1; i < 64; i++) coefs[i] = 0;
@@ -422,6 +451,10 @@ public class JPEGDecoder {
         dcDifference = extend(bits, bitCount);
         lastDC[nComp] = lastDC[nComp] + dcDifference;
         coefs[0] = (short) lastDC[nComp];
+
+        if (mode.equals("Progressive")) {
+            coefs[0] <<= currentSos.getSuccessiveApproximation();
+        }
     }
 
     private void drawMCU(int MCU_width, int MCU_height, int mcuy, int mcux) {
